@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ビンゴカードジェネレーター</title>
+    <script>
+      (function(d) {
+        var config = {
+          kitId: 'gyg4pun',
+          scriptTimeout: 3000,
+          async: true
+        },
+        h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
+      })(document);
+    </script>
+    <style>
+        body {
+            font-family: "nitalago-ruika", sans-serif;
+            font-weight: 200;
+            font-style: normal;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #e0f2f1;
+            padding: 20px;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            margin: auto;
+        }
+
+        h1 {
+            color: #26a69a;
+            margin-bottom: 24px;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            width: 100%;
+            border: 1px solid #b2dfdb;
+            border-radius: 12px;
+            overflow: hidden;
+            box-sizing: border-box;
+            background-color: #ffffff; /* 画像の背景色を白に設定 */
+        }
+
+        .bingo-header-cell, .bingo-number-cell {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            box-sizing: border-box;
+            border: 1px solid #b2dfdb;
+        }
+
+        .bingo-header-cell {
+            background-color: #00897b;
+            color: #ffffff;
+        }
+
+        .bingo-number-cell {
+            background-color: #f5f5f5;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .bingo-number-cell.free {
+            background-color: #ffcc80;
+            color: #e65100;
+        }
+        
+        /* 選択されたマスのスタイル */
+        .bingo-number-cell.is-marked {
+            background-color: #b3b3b3;
+        }
+
+        /* FREEマスが選択された場合のスタイル */
+        .bingo-number-cell.free.is-marked {
+            background-color: #cc7a00;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #ffffff;
+            background-color: #26a69a;
+            border: none;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background-color: #00897b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            .bingo-header-cell, .bingo-number-cell {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/dom-to-image@2.6.0/dist/dom-to-image.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>ビンゴカードジェネレーター</h1>
+        <div class="bingo-card">
+            <div class="bingo-grid" id="bingoGrid">
+                <div class="bingo-header-cell">B</div>
+                <div class="bingo-header-cell">I</div>
+                <div class="bingo-header-cell">N</div>
+                <div class="bingo-header-cell">G</div>
+                <div class="bingo-header-cell">O</div>
+            </div>
+        </div>
+        <div class="button-group">
+            <button onclick="generateBingoCard()">新しいカードを生成</button>
+            <button onclick="saveCardAsImage()">画像を保存</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            generateBingoCard();
+        });
+
+        function generateBingoCard() {
+            const bingoGrid = document.getElementById('bingoGrid');
+            
+            // 既存のビンゴマスをすべてクリア
+            const cellsToRemove = bingoGrid.querySelectorAll('.bingo-number-cell');
+            cellsToRemove.forEach(cell => cell.remove());
+
+            const columns = {
+                B: { min: 1, max: 15 },
+                I: { min: 16, max: 30 },
+                N: { min: 31, max: 45 },
+                G: { min: 46, max: 60 },
+                O: { min: 61, max: 75 }
+            };
+
+            const card = [];
+            const keys = Object.keys(columns);
+
+            keys.forEach(key => {
+                const { min, max } = columns[key];
+                const numbers = [];
+                const pool = Array.from({ length: max - min + 1 }, (_, i) => i + min);
+
+                for (let i = 0; i < 5; i++) {
+                    const randomIndex = Math.floor(Math.random() * pool.length);
+                    numbers.push(pool.splice(randomIndex, 1)[0]);
+                }
+                card.push(numbers);
+            });
+
+            const cells = [];
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 5; col++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('bingo-number-cell');
+
+                    if (col === 2 && row === 2) {
+                        cell.textContent = "FREE";
+                        cell.classList.add('free');
+                    } else {
+                        cell.textContent = card[col][row];
+                    }
+                    
+                    // クリックイベントリスナーを追加
+                    cell.addEventListener('click', () => {
+                        cell.classList.toggle('is-marked');
+                    });
+                    
+                    cells.push(cell);
+                }
+            }
+            cells.forEach(cell => bingoGrid.appendChild(cell));
+        }
+
+        function saveCardAsImage() {
+            const node = document.getElementById('bingoGrid');
+            const scale = 2;
+
+            domtoimage.toPng(node, {
+                height: node.offsetHeight * scale,
+                width: node.offsetWidth * scale,
+                style: {
+                    transform: 'scale(' + scale + ')',
+                    transformOrigin: 'top left'
+                },
+                bgcolor: '#ffffff' // 画像の背景色を白に指定
+            })
+            .then(function (dataUrl) {
+                const link = document.createElement('a');
+                link.download = 'bingo_card.png';
+                link.href = dataUrl;
+                link.click();
+            })
+            .catch(function (error) {
+                console.error('oops, something went wrong!', error);
+            });
+        }
+    </script>
+</body>
+</html>
