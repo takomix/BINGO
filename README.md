@@ -1,2 +1,2 @@
 # BINGO
-I'm bingo game.
+I'm a bingo game.
